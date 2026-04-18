@@ -23,6 +23,8 @@ func main() {
 	mux := http.NewServeMux()
 	s := NewServer(port, mux)
 
+	mux.Handle("/", http.FileServer(http.Dir(".")))
+
 	fmt.Printf("Serving on Port: %s\n", port)
 	if err := s.httpServer.ListenAndServe(); err != nil {
 		fmt.Errorf("Error Starting Server: %v", err)
