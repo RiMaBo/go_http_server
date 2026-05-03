@@ -26,10 +26,13 @@ func getHealth(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	const port = "8080"
+	apiCfg := &apiConfig{}
 
 	mux := http.NewServeMux()
-	mux.Handle("/app/", http.StripPrefix("/app", http.FileServer(http.Dir("."))))
+	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
 	mux.HandleFunc("/healthz", getHealth)
+	mux.HandleFunc("/metrics", apiCfg.getMetrics)
+	mux.HandleFunc("/reset", apiCfg.resetMetrics)
 
 	s := NewServer(port, mux)
 
