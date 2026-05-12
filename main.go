@@ -33,6 +33,7 @@ func main() {
 	mux.HandleFunc("GET /api/healthz", getHealth)
 	mux.HandleFunc("GET /admin/metrics", apiCfg.getMetrics)
 	mux.HandleFunc("POST /admin/reset", apiCfg.resetMetrics)
+	mux.HandleFunc("POST /api/validate_chirp", handlerValidateChirp)
 
 	s := NewServer(port, mux)
 
