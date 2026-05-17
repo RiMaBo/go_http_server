@@ -1,8 +1,15 @@
 package main
 
+import _ "github.com/lib/pq"
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
+	"os"
+
+	"github.com/joho/godotenv"
+
+	"github.com/RiMaBo/go_http_server/internal/database"
 )
 
 type Server struct {
@@ -25,8 +32,28 @@ func getHealth(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Errorf("Error Loading .env File")
+	}
+
+	dbURL := os.Getenv("DB_URL")
+	if len(dbURL) < 1 {
+		fmt.Errorf("DB_URL Must Be Set")
+	}
+
+	db, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		fmt.Errorf("Error Opening Database: %v", err)
+	}
+	defer db.Close()
+
+	dbQueries := database.New(db)
+
 	const port = "8080"
-	apiCfg := &apiConfig{}
+	apiCfg := &apiConfig{
+		db: dbQueries,
+	}
 
 	mux := http.NewServeMux()
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
