@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sync/atomic"
 
 	"github.com/joho/godotenv"
 
@@ -14,6 +15,12 @@ import (
 
 type Server struct {
 	httpServer http.Server
+}
+
+type apiConfig struct {
+	fileserverHits atomic.Int32
+	db             *database.Queries
+	platform       string
 }
 
 func NewServer(port string, mux *http.ServeMux) Server {
@@ -39,12 +46,17 @@ func main() {
 
 	dbURL := os.Getenv("DB_URL")
 	if len(dbURL) < 1 {
-		fmt.Errorf("DB_URL Must Be Set")
+		fmt.Errorf("DB_URL must be set")
+	}
+
+	platform := os.Getenv("PLATFORM")
+	if len(platform) < 1 {
+		fmt.Errorf("PLATFORM must be set")
 	}
 
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
-		fmt.Errorf("Error Opening Database: %v", err)
+		fmt.Errorf("Error opening database: %v", err)
 	}
 	defer db.Close()
 
@@ -52,20 +64,22 @@ func main() {
 
 	const port = "8080"
 	apiCfg := &apiConfig{
-		db: dbQueries,
+		db:       dbQueries,
+		platform: platform,
 	}
 
 	mux := http.NewServeMux()
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
-	mux.HandleFunc("GET /api/healthz", getHealth)
-	mux.HandleFunc("GET /admin/metrics", apiCfg.getMetrics)
+	mux.HandleFunc("GET  /admin/metrics", apiCfg.getMetrics)
 	mux.HandleFunc("POST /admin/reset", apiCfg.resetMetrics)
+	mux.HandleFunc("GET  /api/healthz", getHealth)
 	mux.HandleFunc("POST /api/validate_chirp", handlerValidateChirp)
+	mux.HandleFunc("POST /api/users", apiCfg.handlerCreateUsers)
 
 	s := NewServer(port, mux)
 
-	fmt.Printf("Serving on Port: %s\n", port)
+	fmt.Printf("Serving on port: %s\n", port)
 	if err := s.httpServer.ListenAndServe(); err != nil {
-		fmt.Errorf("Error Starting Server: %v", err)
+		fmt.Errorf("Error starting server: %v", err)
 	}
 }

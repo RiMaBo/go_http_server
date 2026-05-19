@@ -3,15 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"sync/atomic"
-
-	"github.com/RiMaBo/go_http_server/internal/database"
 )
-
-type apiConfig struct {
-	fileserverHits atomic.Int32
-	db             *database.Queries
-}
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -33,6 +25,16 @@ func (cfg *apiConfig) getMetrics(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cfg *apiConfig) resetMetrics(w http.ResponseWriter, r *http.Request) {
+	if cfg.platform != "dev" {
+		respondWithError(w, http.StatusForbidden, fmt.Sprintf("Request not allowed on platform %s", cfg.platform), nil)
+		return
+	}
+
 	cfg.fileserverHits.Store(0)
+	if err := cfg.db.DeleteUsers(r.Context()); err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error deleting users", err)
+		return
+	}
+
 	cfg.getMetrics(w, r)
 }
