@@ -73,8 +73,8 @@ func main() {
 	mux.HandleFunc("GET  /admin/metrics", apiCfg.getMetrics)
 	mux.HandleFunc("POST /admin/reset", apiCfg.resetMetrics)
 	mux.HandleFunc("GET  /api/healthz", getHealth)
-	mux.HandleFunc("POST /api/validate_chirp", handlerValidateChirp)
 	mux.HandleFunc("POST /api/users", apiCfg.handlerCreateUsers)
+	mux.HandleFunc("POST /api/chirps", apiCfg.handlerCreateChirp)
 
 	s := NewServer(port, mux)
 
