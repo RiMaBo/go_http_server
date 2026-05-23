@@ -75,6 +75,7 @@ func main() {
 	mux.HandleFunc("GET  /api/healthz", getHealth)
 	mux.HandleFunc("POST /api/users", apiCfg.handlerCreateUsers)
 	mux.HandleFunc("POST /api/chirps", apiCfg.handlerCreateChirp)
+	mux.HandleFunc("GET /api/chirps", apiCfg.handlerGetChirps)
 
 	s := NewServer(port, mux)
 
