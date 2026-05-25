@@ -12,7 +12,7 @@ func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 	})
 }
 
-func (cfg *apiConfig) getMetrics(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) metricsGet(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(fmt.Sprintf(`
@@ -24,7 +24,7 @@ func (cfg *apiConfig) getMetrics(w http.ResponseWriter, r *http.Request) {
 </html>`, cfg.fileserverHits.Load())))
 }
 
-func (cfg *apiConfig) resetMetrics(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) metricsReset(w http.ResponseWriter, r *http.Request) {
 	if cfg.platform != "dev" {
 		respondWithError(w, http.StatusForbidden, fmt.Sprintf("Request not allowed on platform %s", cfg.platform), nil)
 		return
@@ -36,5 +36,5 @@ func (cfg *apiConfig) resetMetrics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cfg.getMetrics(w, r)
+	cfg.metricsGet(w, r)
 }
