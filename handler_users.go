@@ -61,8 +61,13 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request)
 
 func (cfg *apiConfig) handlerUsersLogin(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Email string    `json:"email"`
-		Password string `json:"password"`
+		Email string            `json:"email"`
+		Password string         `json:"password"`
+		ExpiresIn time.Duration `json:"expires_in_seconds"`
+	}
+	type response struct {
+		User
+		Token string `json:"token"`
 	}
 
 	params := parameters{}
@@ -73,7 +78,7 @@ func (cfg *apiConfig) handlerUsersLogin(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if len(params.Email) < 1 || len(params.Password) < 1 {
-		respondWithError(w, http.StatusBadRequest, `Usage: { "email": "user@example.com", "password": "pa$$word" }`, nil)
+		respondWithError(w, http.StatusBadRequest, `Usage: { "email": "user@example.com", "password": "pa$$word", "expires_in_seconds": x (optional) }`, nil)
 		return
 	}
 
@@ -89,10 +94,23 @@ func (cfg *apiConfig) handlerUsersLogin(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, User{
-		ID:        usr.ID,
-		CreatedAt: usr.CreatedAt,
-		UpdatedAt: usr.UpdatedAt,
-		Email:     usr.Email,
+	expiresIn := params.ExpiresIn * time.Second
+	if expiresIn.Seconds() == 0 || expiresIn.Seconds() > 3600 {
+		expiresIn = time.Hour
+	}
+
+	token, err := auth.MakeJWT(usr.ID, cfg.secret, expiresIn)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error creating token", err)
+	}
+
+	respondWithJSON(w, http.StatusOK, response{
+		User: User{
+			ID:        usr.ID,
+			CreatedAt: usr.CreatedAt,
+			UpdatedAt: usr.UpdatedAt,
+			Email:     usr.Email,
+		},
+		Token: token,
 	})
 }
