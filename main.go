@@ -21,7 +21,7 @@ type apiConfig struct {
 	fileserverHits atomic.Int32
 	db             *database.Queries
 	platform       string
-	secret         string
+	jwtSecret      string
 }
 
 func NewServer(port string, mux *http.ServeMux) Server {
@@ -70,9 +70,9 @@ func main() {
 
 	const port = "8080"
 	apiCfg := &apiConfig{
-		db:       dbQueries,
-		platform: platform,
-		secret:   secret,
+		db:        dbQueries,
+		platform:  platform,
+		jwtSecret: secret,
 	}
 
 	mux := http.NewServeMux()
@@ -87,6 +87,9 @@ func main() {
 	mux.HandleFunc("POST /api/chirps", apiCfg.handlerChirpsCreate)
 	mux.HandleFunc("GET  /api/chirps", apiCfg.handlerChirpsGetAll)
 	mux.HandleFunc("GET  /api/chirps/{chirpID}", apiCfg.handlerChirpGetSingle)
+
+	mux.HandleFunc("POST /api/refresh", apiCfg.handlerTokensRefresh)
+	mux.HandleFunc("POST /api/revoke", apiCfg.handlerTokensRevoke)
 
 	s := NewServer(port, mux)
 
