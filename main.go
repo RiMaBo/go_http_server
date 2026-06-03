@@ -93,6 +93,8 @@ func main() {
 	mux.HandleFunc("POST /api/refresh", apiCfg.handlerTokensRefresh)
 	mux.HandleFunc("POST /api/revoke", apiCfg.handlerTokensRevoke)
 
+	mux.HandleFunc("POST /api/polka/webhooks", apiCfg.handlerWebhook)
+
 	s := NewServer(port, mux)
 
 	fmt.Printf("Serving on port: %s\n", port)
