@@ -6,6 +6,8 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/RiMaBo/go_http_server/internal/auth"
+
 	"github.com/google/uuid"
 )
 
@@ -15,6 +17,17 @@ func (cfg *apiConfig) handlerWebhook(w http.ResponseWriter, r *http.Request) {
 		Data struct {
 			UserID uuid.UUID `json:"user_id"`
 		}
+	}
+
+	apiKey, err := auth.GetAPIKey(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Unauthorized", err)
+		return
+	}
+
+	if apiKey != cfg.polkaKey {
+		respondWithError(w, http.StatusUnauthorized, "Unauthorized", err)
+		return
 	}
 
 	params := parameters{}
@@ -29,7 +42,7 @@ func (cfg *apiConfig) handlerWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := cfg.db.UpgradeUser(r.Context(), params.Data.UserID)
+	_, err = cfg.db.UpgradeUser(r.Context(), params.Data.UserID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			respondWithError(w, http.StatusNotFound, "User not found", err)

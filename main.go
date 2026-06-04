@@ -22,6 +22,7 @@ type apiConfig struct {
 	db             *database.Queries
 	platform       string
 	jwtSecret      string
+	polkaKey       string
 }
 
 func NewServer(port string, mux *http.ServeMux) Server {
@@ -60,6 +61,11 @@ func main() {
 		fmt.Errorf("SECRET must be set")
 	}
 
+	polkaKey := os.Getenv("POLKA_KEY")
+	if len(secret) < 1 {
+		fmt.Errorf("POLKA_KEY must be set")
+	}
+
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		fmt.Errorf("Error opening database: %v", err)
@@ -73,6 +79,7 @@ func main() {
 		db:        dbQueries,
 		platform:  platform,
 		jwtSecret: secret,
+		polkaKey:  polkaKey,
 	}
 
 	mux := http.NewServeMux()
