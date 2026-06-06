@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -114,6 +115,21 @@ func (cfg *apiConfig) handlerChirpsGetAll(w http.ResponseWriter, r *http.Request
 			respondWithError(w, http.StatusInternalServerError, "Error getting chirps", err)
 			return
 		}
+	}
+
+	sortDirection := r.URL.Query().Get("sort")
+	if len(sortDirection) < 1 {
+		sortDirection = "asc"
+	}
+	if sortDirection != "asc" && sortDirection != "desc" {
+		respondWithError(w, http.StatusBadRequest, "Invalid sort parameter", nil)
+		return
+	}
+
+	if sortDirection == "asc" {
+		sort.Slice(dbChirps, func(i, j int) bool { return dbChirps[i].CreatedAt.Before(dbChirps[j].CreatedAt) })
+	} else {
+		sort.Slice(dbChirps, func(i, j int) bool { return dbChirps[i].CreatedAt.After(dbChirps[j].CreatedAt) })
 	}
 
 	chirps := []Chirp{}
